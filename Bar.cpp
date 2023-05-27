@@ -1,50 +1,70 @@
 #include <ncurses.h>
+#include <random>
 #include "Bar.h"
 
 void Bar::incrementGlassCount() {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<int> sleepDist(2, 5);
+
     while (true) {
-    std::this_thread::sleep_for(std::chrono::seconds(2));
-    std::unique_lock<std::mutex> lock(mutex_);
-    glassCount++;
-    lock.unlock();
-    cv_.notify_all();
+        std::this_thread::sleep_for(std::chrono::seconds(sleepDist(gen)));
+
+        std::unique_lock<std::mutex> lock(glassMutex_);
+        glassCount++;
+        lock.unlock();
+
+        glassCV_.notify_all();
     }
 }
 
-void Bar::refillBeer()  {
+void Bar::refillBeer() {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<int> sleepDist(7, 10);
+
     while (true) {
-        std::this_thread::sleep_for(std::chrono::seconds(5));
-        std::unique_lock<std::mutex> lock(mutex_);
+        std::this_thread::sleep_for(std::chrono::seconds(sleepDist(gen)));
+
+        std::unique_lock<std::mutex> lock(beerMutex_);
         if (beerCount <= 700) {
             beerCount = 10000;
         }
         lock.unlock();
-        cv_.notify_all();
+
+        beerCV_.notify_all();
     }
 }
 
 void Bar::giveBeer() {
-    std::unique_lock<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> glassLock(glassMutex_);
+    std::unique_lock<std::mutex> beerLock(beerMutex_);
+
     while (true) {
-        cv_.wait(lock, [this] { return glassCount > 0 && beerCount > 700; });
+        glassCV_.wait(glassLock, [this] { return glassCount > 0 && beerCount > 700; });
+
         glassCount--;
         beerCount -= 700;
+
+        beerLock.unlock();
+        glassLock.unlock();
     }
 }
 
 void Bar::printBar() {
-// g++ -std=c++20 -o main main.cpp bar.cpp -lncurses -lpthread
+    // g++ -std=c++20 -o main main.cpp bar.cpp -lncurses -lpthread
     initscr();
     refresh();
 
-    WINDOW * beer = newwin(11, 10, 1, 0);
+    WINDOW* beer = newwin(11, 10, 1, 0);
     box(beer, 0, 0);
 
-    WINDOW * glasses = newwin(3, 10, 1, 15);
+    WINDOW* glasses = newwin(3, 10, 1, 15);
     box(glasses, 0, 0);
 
     printw("   Beer\t\t Glasses");
     refresh();
+
     while (true) {
         wrefresh(beer);
         wrefresh(glasses);
@@ -61,7 +81,6 @@ void Bar::printBar() {
             }
         }
 
-
         for (int i = 1; i < 9; i++) {
             mvwaddch(glasses, 1, i, ' ');
         }
@@ -73,6 +92,6 @@ void Bar::printBar() {
         wrefresh(beer);
         wrefresh(glasses);
     }
-    
+
     endwin();
 }
