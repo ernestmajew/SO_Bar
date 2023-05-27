@@ -16,6 +16,7 @@ public:
     void giveBeer();
     void incrementGlassCount();
     void refillBeer();
+    void printBar();
 
 private:
     std::mutex mutex_;
