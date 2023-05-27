@@ -37,6 +37,10 @@ void Bar::refillBeer() {
 }
 
 void Bar::giveBeer() {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<int> sleepDist(1, 3);
+
     std::unique_lock<std::mutex> glassLock(glassMutex_, std::defer_lock);
     std::unique_lock<std::mutex> beerLock(beerMutex_, std::defer_lock);
     std::lock(glassLock, beerLock);
@@ -47,8 +51,7 @@ void Bar::giveBeer() {
         glassCount--;
         beerCount -= 700;
 
-        beerLock.unlock();
-        glassLock.unlock();
+        std::this_thread::sleep_for(std::chrono::seconds(sleepDist(gen)));
     }
 }
 
