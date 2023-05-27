@@ -20,7 +20,8 @@ public:
 
 private:
     std::mutex mutex_;
-    std::condition_variable cv_;
+    std::condition_variable glassCV_;
+    std::condition_variable beerCV_;
 };
 
 #endif //SO_BAR_BAR_H
