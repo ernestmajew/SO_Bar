@@ -19,7 +19,8 @@ public:
     void printBar();
 
 private:
-    std::mutex mutex_;
+    std::mutex glassMutex_;
+    std::mutex beerMutex_;
     std::condition_variable glassCV_;
     std::condition_variable beerCV_;
 };
