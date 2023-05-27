@@ -37,8 +37,9 @@ void Bar::refillBeer() {
 }
 
 void Bar::giveBeer() {
-    std::unique_lock<std::mutex> glassLock(glassMutex_);
-    std::unique_lock<std::mutex> beerLock(beerMutex_);
+    std::unique_lock<std::mutex> glassLock(glassMutex_, std::defer_lock);
+    std::unique_lock<std::mutex> beerLock(beerMutex_, std::defer_lock);
+    std::lock(glassLock, beerLock);
 
     while (true) {
         glassCV_.wait(glassLock, [this] { return glassCount > 0 && beerCount > 700; });
