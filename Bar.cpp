@@ -24,15 +24,15 @@ void Bar::refillBeer() {
     std::uniform_int_distribution<int> sleepDist(7, 10);
 
     while (true) {
-        std::this_thread::sleep_for(std::chrono::seconds(sleepDist(gen)));
+        if (beerCount + 8000 < 10000) {
+            std::this_thread::sleep_for(std::chrono::seconds(sleepDist(gen)));
 
-        std::unique_lock<std::mutex> lock(beerMutex_);
-        if (beerCount <= 700) {
-            beerCount = 10000;
+            std::unique_lock<std::mutex> lock(glassMutex_);
+            beerCount += 8000;
+            lock.unlock();
+
+            glassCV_.notify_all();
         }
-        lock.unlock();
-
-        beerCV_.notify_all();
     }
 }
 
